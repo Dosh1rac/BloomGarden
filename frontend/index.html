@@ -315,6 +315,85 @@
     font-size: 15px;
     line-height: 1.6;
   }
+
+  /* ---------- переключатель разделов ---------- */
+  .view-tabs{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+  .vt{
+    border:1px solid var(--pink-200);background:rgba(255,255,255,.72);color:var(--ink-soft);
+    padding:10px 20px;border-radius:999px;cursor:pointer;font:700 14px inherit;transition:.18s;
+    box-shadow:0 4px 12px rgba(207,106,146,.07);
+  }
+  .vt.active{
+    background:linear-gradient(135deg,var(--pink-400),var(--pink-500));color:#fff;
+    border-color:transparent;box-shadow:0 8px 18px rgba(229,127,166,.32);
+  }
+  body.night .vt{background:rgba(255,255,255,.09);border-color:rgba(255,205,228,.24);color:#e6cfe0}
+  body.night .vt.active{background:var(--pink-400);color:#fff;border-color:var(--pink-400)}
+
+  /* ---------- комнаты ---------- */
+  .rooms-layout{display:grid;grid-template-columns:250px minmax(0,1fr) 300px;gap:18px;margin-top:18px;align-items:start}
+  @media (max-width:1150px){.rooms-layout{grid-template-columns:1fr}}
+  .room-list{display:flex;flex-direction:column;gap:8px}
+  .room-chip{
+    display:flex;align-items:center;gap:9px;width:100%;padding:10px 12px;border-radius:16px;
+    border:1px solid var(--pink-200);background:var(--white);cursor:pointer;font-family:inherit;
+    color:var(--ink);text-align:left;transition:.16s;
+  }
+  .room-chip:hover{transform:translateY(-1px);box-shadow:0 8px 16px rgba(207,106,146,.12)}
+  .room-chip.active{border-color:var(--pink-400);background:var(--pink-100);box-shadow:0 8px 18px rgba(207,106,146,.16)}
+  .room-chip-ico{font-size:19px}
+  .room-chip-name{font-weight:700;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
+  .room-chip-meta{
+    font-size:11px;font-weight:800;color:var(--pink-600);
+    background:rgba(255,255,255,.8);border-radius:999px;padding:2px 8px;
+  }
+  .room-add{width:100%;margin-top:12px}
+  .room-stage{padding:16px 16px 18px}
+  .room-stage .garden-head{margin-bottom:10px}
+  .room-scene{
+    position:relative;width:100%;aspect-ratio:16/10;min-height:340px;border-radius:22px;
+    overflow:hidden;background:#f4e5ea;border:1px solid var(--pink-200);
+    touch-action:none;user-select:none;
+  }
+  .room-wall,.room-floor{position:absolute;left:0;right:0;pointer-events:none}
+  .room-wall{top:0;height:58%}
+  .room-floor{bottom:0;height:42%;box-shadow:inset 0 10px 20px rgba(0,0,0,.06)}
+  .room-baseboard{position:absolute;left:0;right:0;top:calc(58% - 6px);height:12px;pointer-events:none}
+  .room-light{
+    position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(60% 48% at 50% 6%,rgba(255,255,255,.55),transparent 70%);
+  }
+  body.night .room-light{background:radial-gradient(60% 48% at 50% 6%,rgba(255,240,205,.18),transparent 70%)}
+  .room-item{
+    position:absolute;transform:translate(-50%,-50%);cursor:grab;touch-action:none;
+    transform-origin:center;transition:filter .15s ease;
+  }
+  .room-item:hover{filter:brightness(1.04)}
+  .room-item.dragging{cursor:grabbing;filter:drop-shadow(0 14px 18px rgba(120,80,110,.35))}
+  .room-item.selected .room-item-art{outline:2px dashed var(--pink-400);outline-offset:5px;border-radius:10px}
+  .room-item-art{pointer-events:none}
+  .room-item-art svg{display:block;width:100%;height:auto;filter:drop-shadow(0 6px 6px rgba(120,80,110,.18))}
+  .room-empty{
+    position:absolute;inset:0;display:grid;place-items:center;text-align:center;
+    padding:30px;color:var(--ink-soft);font-size:15px;line-height:1.6;
+  }
+  .theme-picker{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:4px}
+  .theme-swatch{
+    display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:14px;
+    border:1px solid var(--pink-200);background:var(--white);cursor:pointer;
+    font-family:inherit;font-size:12.5px;font-weight:700;color:var(--ink);transition:.15s;
+  }
+  .theme-swatch:hover{transform:translateY(-1px);box-shadow:0 6px 14px rgba(207,106,146,.12)}
+  .theme-swatch.active{border-color:var(--pink-400);box-shadow:0 0 0 3px rgba(244,163,194,.25)}
+  .theme-dot{width:26px;height:26px;border-radius:9px;border:1px solid rgba(0,0,0,.06);flex:none}
+  .room-item-tools{display:flex;gap:8px;margin-top:10px}
+  .room-item-tools .btn{flex:1;padding:10px 0;font-size:15px}
+  body.night .room-chip{background:rgba(255,255,255,.08);border-color:rgba(255,205,228,.22);color:#f3e6f2}
+  body.night .room-chip.active{background:rgba(255,255,255,.16);border-color:var(--pink-400)}
+  body.night .theme-swatch{background:rgba(255,255,255,.08);border-color:rgba(255,205,228,.22);color:#f3e6f2}
+  body.night .room-scene{border-color:rgba(255,205,228,.22)}
+  .item .ico svg{width:100%;max-width:96px;height:auto}
+  .item .ico.wide svg{max-width:124px}
 </style>
 </head>
 <body>
@@ -334,7 +413,12 @@
     </div>
   </header>
 
-  <div class="layout">
+  <div class="view-tabs">
+    <button class="vt active" data-view="garden" onclick="switchView('garden')">🌿 Сад</button>
+    <button class="vt" data-view="rooms" onclick="switchView('rooms')">🏠 Комнаты</button>
+  </div>
+
+  <div class="layout" id="gardenView">
     <aside class="card">
       <div class="avatar">🌷</div>
       <div class="garden-name" id="gardenName">Мой сад</div>
@@ -383,10 +467,59 @@
     </aside>
   </div>
 
+  <div class="rooms-layout hidden" id="roomsView">
+    <aside class="card">
+      <h3>Мои комнаты</h3>
+      <div class="room-list" id="roomList"></div>
+      <button class="btn soft room-add" onclick="openCreateRoom()">➕ Новая комната</button>
+      <div class="sub" style="margin-top:12px">
+        Комната — это маленький мир, который ты собираешь сама. Покупай мебель за лепестки 🌸,
+        перетаскивай её и расставляй как нравится.
+      </div>
+    </aside>
+
+    <section class="room-stage card">
+      <div class="garden-head">
+        <div class="garden-title" id="roomTitle">🏠 Комната</div>
+        <div class="plants-note" id="roomHint">Выбери мебель внизу и расставь её по комнате</div>
+      </div>
+      <div class="room-scene" id="roomScene"></div>
+    </section>
+
+    <aside class="card" id="roomPanel">
+      <h3>Комната</h3>
+      <div id="roomPanelEmpty" class="sub">
+        Выбери комнату слева или создай новую — и здесь появятся её настройки.
+      </div>
+      <div id="roomPanelBody" class="hidden">
+        <div class="detail-emoji" id="rpEmoji">🏠</div>
+        <div style="text-align:center;font-weight:800;font-size:18px" id="rpName">—</div>
+        <div style="text-align:center" class="sub" id="rpMeta">—</div>
+        <div class="rename" style="margin-top:12px">
+          <input id="roomNameInput" maxlength="24" placeholder="Название комнаты">
+          <button class="btn" onclick="renameRoom()">✓</button>
+        </div>
+        <div class="sub" style="margin-top:16px;margin-bottom:6px">Оформление стены и пола</div>
+        <div class="theme-picker" id="themePicker"></div>
+        <div id="roomItemActions" class="hidden">
+          <div class="sub" style="margin-top:16px" id="riTitle">Выбран предмет</div>
+          <div class="room-item-tools">
+            <button class="btn soft" title="Уменьшить" onclick="scaleRoomItem(-1)">−</button>
+            <button class="btn soft" title="Увеличить" onclick="scaleRoomItem(1)">＋</button>
+            <button class="btn soft" title="Отразить" onclick="flipRoomItem()">↔</button>
+            <button class="btn soft" title="Убрать" onclick="removeRoomItem()">🗑️</button>
+          </div>
+        </div>
+        <button class="btn soft" style="width:100%;margin-top:18px" onclick="deleteRoom()">🗑️ Удалить комнату</button>
+      </div>
+    </aside>
+  </div>
+
   <section class="bottom card">
     <div class="tabs">
       <button class="tab active" data-tab="seeds" onclick="switchTab('seeds')">🌱 Семена</button>
       <button class="tab" data-tab="decor" onclick="switchTab('decor')">🏮 Декор</button>
+      <button class="tab" data-tab="furniture" onclick="switchTab('furniture')">🛋️ Мебель</button>
       <button class="tab" data-tab="collection" onclick="switchTab('collection')">📖 Коллекция</button>
     </div>
     <div class="cards" id="shopCards"></div>
@@ -620,6 +753,194 @@ function decorSVG(item){
   }
 }
 
+/* =============================================================== мебель комнат */
+function roomItemSVG(item){
+  switch(item){
+    case 'sofa': return `
+      <svg viewBox="0 0 260 155">
+        <ellipse cx="130" cy="143" rx="104" ry="9" fill="#8a5b72" opacity=".14"/>
+        <rect x="20" y="30" width="220" height="82" rx="30" fill="#e98bae"/>
+        <rect x="32" y="44" width="196" height="56" rx="22" fill="#f2a5c0"/>
+        <rect x="18" y="86" width="224" height="44" rx="18" fill="#df7ba1"/>
+        <rect x="38" y="76" width="86" height="40" rx="15" fill="#ffc9dd"/>
+        <rect x="136" y="76" width="86" height="40" rx="15" fill="#ffc9dd"/>
+        <rect x="8" y="60" width="32" height="64" rx="15" fill="#d4739a"/>
+        <rect x="220" y="60" width="32" height="64" rx="15" fill="#d4739a"/>
+        <rect x="34" y="124" width="13" height="18" rx="5" fill="#a9765a"/>
+        <rect x="213" y="124" width="13" height="18" rx="5" fill="#a9765a"/>
+        <path d="M48 94 q9 -7 18 0" stroke="#f7b9d0" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+      </svg>`;
+    case 'armchair': return `
+      <svg viewBox="0 0 160 160">
+        <ellipse cx="80" cy="148" rx="58" ry="7" fill="#8a5b72" opacity=".14"/>
+        <rect x="28" y="24" width="104" height="86" rx="34" fill="#b39ddb"/>
+        <rect x="38" y="36" width="84" height="62" rx="26" fill="#c9b9ea"/>
+        <rect x="22" y="92" width="116" height="38" rx="17" fill="#a58fd1"/>
+        <rect x="44" y="86" width="72" height="28" rx="12" fill="#e0d4f5"/>
+        <rect x="10" y="64" width="30" height="58" rx="14" fill="#9a82c8"/>
+        <rect x="120" y="64" width="30" height="58" rx="14" fill="#9a82c8"/>
+        <rect x="38" y="128" width="12" height="16" rx="5" fill="#8a6f4e"/>
+        <rect x="110" y="128" width="12" height="16" rx="5" fill="#8a6f4e"/>
+      </svg>`;
+    case 'table': return `
+      <svg viewBox="0 0 190 125">
+        <ellipse cx="95" cy="116" rx="72" ry="7" fill="#8a5b72" opacity=".13"/>
+        <ellipse cx="95" cy="62" rx="78" ry="23" fill="#c98f6c"/>
+        <ellipse cx="95" cy="58" rx="78" ry="21" fill="#e7b48f"/>
+        <rect x="30" y="72" width="8" height="38" rx="4" fill="#a9765a"/>
+        <rect x="152" y="72" width="8" height="38" rx="4" fill="#a9765a"/>
+        <rect x="92" y="76" width="7" height="36" rx="3.5" fill="#b98a6a"/>
+        <ellipse cx="95" cy="82" rx="34" ry="4" fill="#c79b78" opacity=".5"/>
+        <path d="M78 46 q-6 -14 2 -22 q8 8 2 22" fill="#9ed3a3"/>
+        <rect x="75" y="44" width="14" height="14" rx="4" fill="#f2a0bd"/>
+        <circle cx="116" cy="44" r="7" fill="#ffd4de" stroke="#efa6bd" stroke-width="1.5"/>
+        <path d="M109 44 h14" stroke="#f6b6c8" stroke-width="1.2"/>
+      </svg>`;
+    case 'chair': return `
+      <svg viewBox="0 0 120 160">
+        <ellipse cx="60" cy="148" rx="38" ry="6" fill="#8a5b72" opacity=".13"/>
+        <rect x="26" y="18" width="68" height="68" rx="18" fill="#e2a97f"/>
+        <rect x="36" y="28" width="48" height="48" rx="13" fill="#f0c6a4"/>
+        <rect x="22" y="80" width="76" height="20" rx="9" fill="#d69a6f"/>
+        <rect x="30" y="98" width="10" height="46" rx="4" fill="#a9765a"/>
+        <rect x="80" y="98" width="10" height="46" rx="4" fill="#a9765a"/>
+        <path d="M40 70 q20 10 40 0" stroke="#c98f6c" stroke-width="2" fill="none"/>
+      </svg>`;
+    case 'shelf': return `
+      <svg viewBox="0 0 150 200">
+        <ellipse cx="75" cy="189" rx="56" ry="7" fill="#8a5b72" opacity=".13"/>
+        <rect x="18" y="14" width="114" height="172" rx="10" fill="#c98f6c"/>
+        <rect x="27" y="23" width="96" height="154" rx="6" fill="#f5e7d9"/>
+        <rect x="27" y="70" width="96" height="7" fill="#c98f6c"/>
+        <rect x="27" y="120" width="96" height="7" fill="#c98f6c"/>
+        <rect x="36" y="38" width="12" height="32" rx="3" fill="#e98bae"/>
+        <rect x="51" y="44" width="10" height="26" rx="3" fill="#9ed3a3"/>
+        <rect x="64" y="34" width="14" height="36" rx="3" fill="#b39ddb"/>
+        <rect x="82" y="46" width="11" height="24" rx="3" fill="#f0c7dd"/>
+        <rect x="96" y="40" width="13" height="30" rx="3" fill="#f7d154"/>
+        <rect x="40" y="106" width="16" height="14" rx="4" fill="#e7b48f"/>
+        <ellipse cx="48" cy="102" rx="12" ry="8" fill="#9ed3a3"/>
+        <circle cx="86" cy="104" r="12" fill="#ffd4de"/>
+        <circle cx="78" cy="108" r="9" fill="#f2a0bd"/>
+        <circle cx="94" cy="108" r="9" fill="#f2a0bd"/>
+        <rect x="82" y="112" width="8" height="8" rx="2" fill="#e7b48f"/>
+        <rect x="34" y="157" width="12" height="20" rx="3" fill="#b39ddb"/>
+        <rect x="48" y="162" width="10" height="15" rx="3" fill="#f2a0bd"/>
+        <rect x="60" y="154" width="14" height="23" rx="3" fill="#9ed3a3"/>
+      </svg>`;
+    case 'lamp': return `
+      <svg viewBox="0 0 110 220">
+        <ellipse cx="55" cy="205" rx="34" ry="7" fill="#8a5b72" opacity=".15"/>
+        <ellipse cx="55" cy="200" rx="24" ry="6" fill="#8f7ba3"/>
+        <rect x="51" y="74" width="8" height="128" rx="4" fill="#a48fb8"/>
+        <path d="M28 76 L40 26 L70 26 L82 76 Z" fill="#ffd9e5" stroke="#efa6bd" stroke-width="2"/>
+        <ellipse cx="55" cy="76" rx="27" ry="6" fill="#fff2c6"/>
+        <ellipse cx="55" cy="76" rx="16" ry="3.4" fill="#fff9df"/>
+        <path d="M55 44 v-10" stroke="#c9a9c9" stroke-width="3"/>
+        <circle cx="55" cy="30" r="5" fill="#ffcf6b"/>
+      </svg>`;
+    case 'rug': return `
+      <svg viewBox="0 0 320 150">
+        <ellipse cx="160" cy="130" rx="150" ry="14" fill="#8a5b72" opacity=".1"/>
+        <ellipse cx="160" cy="75" rx="150" ry="62" fill="#f4b8cf"/>
+        <ellipse cx="160" cy="75" rx="128" ry="50" fill="#f9d3e2"/>
+        <ellipse cx="160" cy="75" rx="104" ry="38" fill="none" stroke="#e57fa6" stroke-width="3" stroke-dasharray="10 8"/>
+        <ellipse cx="160" cy="75" rx="74" ry="25" fill="#fbe6ee"/>
+        <g fill="#e57fa6" opacity=".65">
+          <circle cx="100" cy="75" r="4"/><circle cx="220" cy="75" r="4"/>
+          <circle cx="160" cy="52" r="4"/><circle cx="160" cy="98" r="4"/>
+        </g>
+      </svg>`;
+    case 'plant': return `
+      <svg viewBox="0 0 130 190">
+        <ellipse cx="65" cy="180" rx="40" ry="7" fill="#8a5b72" opacity=".14"/>
+        <path d="M65 142 C65 112 64 94 65 76" stroke="#7fa87c" stroke-width="5" fill="none" stroke-linecap="round"/>
+        <path d="M63 108 C40 100 28 82 32 64 C52 68 64 86 63 108 Z" fill="#7fb98a"/>
+        <path d="M67 96 C88 88 102 72 100 54 C80 58 68 76 67 96 Z" fill="#8fbf94"/>
+        <path d="M64 130 C48 124 38 110 40 96 C54 100 63 114 64 130 Z" fill="#6ea477"/>
+        <path d="M66 78 C58 60 60 42 72 30 C82 42 80 62 66 78 Z" fill="#9ed3a3"/>
+        <rect x="36" y="132" width="58" height="12" rx="6" fill="#d69a6f"/>
+        <path d="M40 144 h50 l-7 34 q-1 5 -6 5 h-24 q-5 0 -6 -5 Z" fill="#e7b48f"/>
+      </svg>`;
+    case 'painting': return `
+      <svg viewBox="0 0 160 130">
+        <ellipse cx="80" cy="121" rx="52" ry="5" fill="#8a5b72" opacity=".1"/>
+        <rect x="10" y="10" width="140" height="108" rx="8" fill="#c98f6c"/>
+        <rect x="20" y="20" width="120" height="88" rx="4" fill="#fff6f9"/>
+        <path d="M20 92 q30 -26 60 0 q30 26 60 0 v16 h-120 Z" fill="#d9f0d5"/>
+        <circle cx="58" cy="52" r="9" fill="#f2a0bd"/>
+        <circle cx="72" cy="46" r="8" fill="#f7d154"/>
+        <circle cx="88" cy="54" r="9" fill="#b39ddb"/>
+        <path d="M58 60 v26 M72 54 v30 M88 62 v24" stroke="#7fa87c" stroke-width="2.4"/>
+        <path d="M50 76 q8 -6 16 0 M80 70 q8 -6 16 0" stroke="#7fa87c" stroke-width="2"/>
+      </svg>`;
+    case 'window': return `
+      <svg viewBox="0 0 200 220">
+        <rect x="30" y="12" width="140" height="180" rx="10" fill="#fffdfe" stroke="#e3cdd6" stroke-width="4"/>
+        <rect x="44" y="26" width="112" height="152" rx="6" fill="#bfe0f5"/>
+        <circle cx="80" cy="60" r="16" fill="#ffe9a8"/>
+        <path d="M44 130 q24 -20 48 0 t48 0 v48 h-96 Z" fill="#d8efd2"/>
+        <path d="M44 152 q20 -16 40 0 t40 0 v26 h-80 Z" fill="#b9dfb0"/>
+        <rect x="96" y="26" width="8" height="152" fill="#fffdfe"/>
+        <rect x="44" y="96" width="112" height="8" fill="#fffdfe"/>
+        <path d="M26 18 q26 20 16 96 q-8 44 2 78 h-26 q10 -40 2 -82 q-8 -56 6 -92 Z" fill="#f7b9d0"/>
+        <path d="M174 18 q-26 20 -16 96 q8 44 -2 78 h26 q-10 -40 -2 -82 q8 -56 -6 -92 Z" fill="#f7b9d0"/>
+        <rect x="20" y="188" width="160" height="12" rx="6" fill="#e7d3c2"/>
+      </svg>`;
+    case 'bed': return `
+      <svg viewBox="0 0 300 200">
+        <ellipse cx="150" cy="186" rx="126" ry="10" fill="#8a5b72" opacity=".13"/>
+        <rect x="16" y="18" width="46" height="150" rx="14" fill="#b39ddb"/>
+        <rect x="46" y="96" width="240" height="58" rx="16" fill="#c98f6c"/>
+        <rect x="52" y="72" width="228" height="46" rx="14" fill="#fffdfe"/>
+        <path d="M120 72 h152 q8 0 8 8 v38 h-170 Z" fill="#f2a5c0"/>
+        <path d="M132 72 v46" stroke="#e98bae" stroke-width="3"/>
+        <rect x="64" y="58" width="60" height="32" rx="13" fill="#ffeef6" stroke="#f0c7dd" stroke-width="2" transform="rotate(-4 94 74)"/>
+        <rect x="72" y="52" width="52" height="28" rx="12" fill="#fff7fb" stroke="#f0c7dd" stroke-width="2" transform="rotate(3 98 66)"/>
+        <rect x="52" y="152" width="14" height="22" rx="5" fill="#a9765a"/>
+        <rect x="262" y="152" width="14" height="22" rx="5" fill="#a9765a"/>
+      </svg>`;
+    case 'pouf': return `
+      <svg viewBox="0 0 130 110">
+        <ellipse cx="65" cy="98" rx="48" ry="7" fill="#8a5b72" opacity=".14"/>
+        <ellipse cx="65" cy="78" rx="48" ry="24" fill="#b39ddb"/>
+        <rect x="17" y="38" width="96" height="44" rx="22" fill="#c9b9ea"/>
+        <ellipse cx="65" cy="38" rx="48" ry="18" fill="#e0d4f5"/>
+        <path d="M52 38 q13 -8 26 0" stroke="#b39ddb" stroke-width="2" fill="none"/>
+        <circle cx="65" cy="33" r="4" fill="#a58fd1"/>
+        <rect x="32" y="94" width="9" height="12" rx="4" fill="#8a6f4e"/>
+        <rect x="89" y="94" width="9" height="12" rx="4" fill="#8a6f4e"/>
+      </svg>`;
+    case 'cat': return `
+      <svg viewBox="0 0 150 100">
+        <ellipse cx="78" cy="88" rx="58" ry="7" fill="#8a5b72" opacity=".12"/>
+        <path d="M122 70 q24 -4 18 -26" stroke="#c79b78" stroke-width="10" fill="none" stroke-linecap="round"/>
+        <ellipse cx="84" cy="68" rx="46" ry="23" fill="#d9b38c"/>
+        <path d="M52 56 q-18 2 -26 16 q16 8 30 -2" fill="#d9b38c"/>
+        <circle cx="46" cy="50" r="23" fill="#e2c19e"/>
+        <path d="M29 36 l-3 -17 l16 10 Z" fill="#d9b38c"/>
+        <path d="M60 34 l5 -16 l10 13 Z" fill="#d9b38c"/>
+        <path d="M31 34 l-1 -8 l8 5 Z" fill="#f2b6c8"/>
+        <path d="M62 33 l3 -8 l5 7 Z" fill="#f2b6c8"/>
+        <path d="M36 50 q5 -4 10 0 M53 50 q5 -4 10 0" stroke="#8a6b52" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M47 58 q4 3 8 0" stroke="#8a6b52" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+        <path d="M88 58 q12 -8 24 0 M92 70 q12 -6 22 0" stroke="#c79b78" stroke-width="2" fill="none" opacity=".7"/>
+        <path d="M60 66 q16 8 34 0" stroke="#c79b78" stroke-width="2" fill="none" opacity=".5"/>
+      </svg>`;
+    case 'clock': return `
+      <svg viewBox="0 0 110 130">
+        <circle cx="55" cy="55" r="44" fill="#fdf7f1" stroke="#c98f6c" stroke-width="7"/>
+        <g stroke="#d9b9a4" stroke-width="2" stroke-linecap="round">
+          <path d="M55 20 v7"/><path d="M55 83 v7"/><path d="M20 55 h7"/><path d="M83 55 h7"/>
+        </g>
+        <path d="M55 55 V31 M55 55 L72 65" stroke="#8a5b72" stroke-width="3.6" stroke-linecap="round"/>
+        <circle cx="55" cy="55" r="3.2" fill="#8a5b72"/>
+        <circle cx="55" cy="55" r="1.4" fill="#fff"/>
+      </svg>`;
+    default: return '';
+  }
+}
+
 const DECOR_SLOTS = [
   {x:5,  y:8,  s:1},   {x:17, y:2,  s:.92},
   {x:29, y:9,  s:1.02},{x:42, y:3,  s:.9},
@@ -631,6 +952,9 @@ const DECOR_SLOTS = [
 let STATE = null;
 let selectedId = null;
 let currentTab = 'seeds';
+let currentView = 'garden';
+let currentRoomId = null;
+let selectedRoomItemId = null;
 
 const esc = s => String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 
@@ -880,6 +1204,16 @@ function render(){
 
   renderDecor();
   renderDetail();
+
+  if(currentRoomId != null && !(STATE.rooms || []).some(r => r.id === currentRoomId)){
+    currentRoomId = null;
+    selectedRoomItemId = null;
+  }
+  if(currentRoomId == null && currentView === 'rooms' && (STATE.rooms || []).length){
+    currentRoomId = STATE.rooms[0].id;
+  }
+  renderRooms();
+
   renderShop();
 }
 
@@ -956,6 +1290,251 @@ function makeDraggable(el, d){
   el.addEventListener('lostpointercapture', release);
 }
 
+/* =============================================================== комнаты: рендер */
+function roomItemLimits(it){
+  const scale = it.scale || 1;
+  const halfW = Math.min(45, (it.w || 10) * scale / 2);
+  const halfH = Math.min(45, (it.w || 10) * scale * (it.ratio || 1.2) * 1.6 / 2);
+  if(it.place === 'wall'){
+    return { xmin: halfW + 1, xmax: 99 - halfW, ymin: Math.max(4, halfH + 1), ymax: 50 };
+  }
+  return { xmin: halfW + 1, xmax: 99 - halfW, ymin: 64, ymax: Math.min(95, 99 - halfH) };
+}
+
+function themeOf(id){
+  const list = (STATE && STATE.room_themes) || [];
+  return list.find(t => t.id === id) || list[0] ||
+    { id:'cozy', name:'Комната', emoji:'🏠', wall:['#ffe9f1','#ffd6e6'], floor:['#e9c9b2','#d6a98d'], accent:'#e57fa6' };
+}
+
+function currentRoom(){
+  return ((STATE && STATE.rooms) || []).find(r => r.id === currentRoomId) || null;
+}
+
+function currentRoomItem(){
+  const room = currentRoom();
+  return room ? room.items.find(i => i.id === selectedRoomItemId) : null;
+}
+
+function renderRooms(){
+  if(!STATE) return;
+  renderRoomList();
+  renderRoomScene();
+  renderRoomPanel();
+}
+
+function renderRoomList(){
+  const box = document.getElementById('roomList');
+  if(!box) return;
+  box.innerHTML = '';
+  const rooms = STATE.rooms || [];
+  if(!rooms.length){
+    box.innerHTML = '<div class="sub">Пока ни одной комнаты. Создай первую! 🏠</div>';
+  }
+  rooms.forEach(r => {
+    const el = document.createElement('button');
+    el.type = 'button';
+    el.className = 'room-chip' + (r.id === currentRoomId ? ' active' : '');
+    el.title = r.name;
+    el.innerHTML = `<span class="room-chip-ico">${r.emoji}</span>
+      <span class="room-chip-name">${esc(r.name)}</span>
+      <span class="room-chip-meta">${r.items.length}</span>`;
+    el.onclick = () => {
+      currentRoomId = r.id;
+      selectedRoomItemId = null;
+      renderRooms();
+      renderShop();
+    };
+    box.appendChild(el);
+  });
+}
+
+function roomItemZ(it){
+  if(it.place === 'wall') return 2 + it.pos_y / 8;
+  if(it.item === 'rug') return 4 + it.pos_y / 20;
+  return 10 + it.pos_y / 4;
+}
+
+function renderRoomScene(){
+  const scene = document.getElementById('roomScene');
+  if(!scene) return;
+  const room = currentRoom();
+
+  document.getElementById('roomTitle').textContent = room ? room.emoji + ' ' + room.name : '🏠 Комната';
+  document.getElementById('roomHint').textContent = room
+    ? (room.items.length
+        ? 'Перетаскивай мебель · нажми на предмет, чтобы изменить его'
+        : 'Купи мебель внизу — она появится здесь')
+    : 'Создай комнату слева, чтобы начать';
+
+  if(!room){
+    scene.style.background = '';
+    scene.innerHTML = '<div class="room-empty">Здесь пока пусто.<br>Создай комнату слева и обставь её по своему вкусу 🛋️</div>';
+    return;
+  }
+
+  const th = themeOf(room.theme);
+  scene.style.background = th.floor[0];
+  scene.innerHTML = '';
+
+  const wall = document.createElement('div');
+  wall.className = 'room-wall';
+  wall.style.background = `linear-gradient(180deg, ${th.wall[0]}, ${th.wall[1]})`;
+
+  const floor = document.createElement('div');
+  floor.className = 'room-floor';
+  floor.style.background = `linear-gradient(180deg, ${th.floor[0]}, ${th.floor[1]})`;
+
+  const base = document.createElement('div');
+  base.className = 'room-baseboard';
+  base.style.background = th.accent + '33';
+
+  const light = document.createElement('div');
+  light.className = 'room-light';
+
+  scene.append(wall, floor, base, light);
+
+  if(!room.items.length){
+    const empty = document.createElement('div');
+    empty.className = 'room-empty';
+    empty.style.pointerEvents = 'none';
+    empty.innerHTML = `<span style="background:rgba(255,255,255,.78);padding:16px 22px;border-radius:18px;color:var(--ink);box-shadow:0 8px 22px rgba(120,80,110,.16)">
+      Комната пока пустая.<br>Выбери мебель внизу — и она появится здесь 🛋️
+    </span>`;
+    scene.appendChild(empty);
+  }
+
+  room.items.forEach(it => scene.appendChild(buildRoomItem(it)));
+
+  scene.onclick = e => {
+    if(e.target === scene || e.target === wall || e.target === floor ||
+       e.target === light || e.target === base){
+      if(selectedRoomItemId !== null){
+        selectedRoomItemId = null;
+        renderRoomScene();
+        renderRoomPanel();
+      }
+    }
+  };
+}
+
+function buildRoomItem(it){
+  const el = document.createElement('div');
+  el.className = 'room-item' + (it.id === selectedRoomItemId ? ' selected' : '');
+  el.dataset.id = it.id;
+  el.style.left = it.pos_x + '%';
+  el.style.top = it.pos_y + '%';
+  el.style.width = (it.w * (it.scale || 1)) + '%';
+  el.style.zIndex = it.id === selectedRoomItemId ? 900 : Math.round(roomItemZ(it));
+
+  const art = document.createElement('div');
+  art.className = 'room-item-art';
+  art.style.transform = `scaleX(${it.flip || 1})`;
+  art.innerHTML = roomItemSVG(it.item);
+  el.appendChild(art);
+
+  el.addEventListener('click', e => {
+    e.stopPropagation();
+    if(selectedRoomItemId !== it.id){
+      selectedRoomItemId = it.id;
+      renderRoomScene();
+      renderRoomPanel();
+    }
+  });
+
+  makeRoomItemDraggable(el, it);
+  return el;
+}
+
+function makeRoomItemDraggable(el, it){
+  let dragging = false, startX = 0, startY = 0, baseX = 0, baseY = 0, moved = false;
+
+  el.addEventListener('pointerdown', e => {
+    if(e.button !== undefined && e.button !== 0) return;
+    e.preventDefault();
+    dragging = true; moved = false;
+    el.classList.add('dragging');
+    el.style.zIndex = 950;
+    try { el.setPointerCapture(e.pointerId); } catch(err) {}
+    startX = e.clientX; startY = e.clientY;
+    baseX = it.pos_x; baseY = it.pos_y;
+  });
+
+  el.addEventListener('pointermove', e => {
+    if(!dragging) return;
+    const scene = document.getElementById('roomScene');
+    if(!scene) return;
+    const r = scene.getBoundingClientRect();
+    const lim = roomItemLimits(it);
+    let x = baseX + (e.clientX - startX) / r.width * 100;
+    let y = baseY + (e.clientY - startY) / r.height * 100;
+    x = Math.max(lim.xmin, Math.min(lim.xmax, x));
+    y = Math.max(lim.ymin, Math.min(lim.ymax, y));
+    el.style.left = x + '%';
+    el.style.top = y + '%';
+    el.dataset.x = x;
+    el.dataset.y = y;
+    if(Math.abs(e.clientX - startX) + Math.abs(e.clientY - startY) > 2) moved = true;
+  });
+
+  const release = () => {
+    if(!dragging) return;
+    dragging = false;
+    el.classList.remove('dragging');
+    if(!moved){
+      el.style.zIndex = Math.round(roomItemZ(it));
+      return;
+    }
+    const x = parseFloat(el.dataset.x || it.pos_x);
+    const y = parseFloat(el.dataset.y || it.pos_y);
+    it.pos_x = x;
+    it.pos_y = y;
+    el.style.zIndex = Math.round(roomItemZ(it));
+    fetch('/api/room-items/' + it.id + '/move', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({x, y})
+    }).catch(()=>{});
+  };
+  el.addEventListener('pointerup', release);
+  el.addEventListener('pointercancel', release);
+  el.addEventListener('lostpointercapture', release);
+}
+
+function renderRoomPanel(){
+  const room = currentRoom();
+  const empty = document.getElementById('roomPanelEmpty');
+  const body = document.getElementById('roomPanelBody');
+  if(!empty || !body) return;
+  empty.classList.toggle('hidden', !!room);
+  body.classList.toggle('hidden', !room);
+  if(!room) return;
+
+  document.getElementById('rpEmoji').textContent = room.emoji;
+  document.getElementById('rpName').textContent = room.name;
+  document.getElementById('rpMeta').textContent = room.theme_name + ' · предметов: ' + room.items.length;
+  document.getElementById('roomNameInput').value = room.name;
+
+  const picker = document.getElementById('themePicker');
+  picker.innerHTML = '';
+  (STATE.room_themes || []).forEach(t => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'theme-swatch' + (t.id === room.theme ? ' active' : '');
+    b.innerHTML = `<span class="theme-dot" style="background:linear-gradient(135deg,${t.wall[0]} 0 55%,${t.floor[0]} 55% 100%)"></span>
+      <span>${t.emoji} ${esc(t.name)}</span>`;
+    b.onclick = () => setRoomTheme(t.id);
+    picker.appendChild(b);
+  });
+
+  const selected = currentRoomItem();
+  const actions = document.getElementById('roomItemActions');
+  actions.classList.toggle('hidden', !selected);
+  if(selected){
+    document.getElementById('riTitle').textContent =
+      'Выбрано: ' + selected.name + ' · ' + Math.round((selected.scale || 1) * 100) + '%';
+  }
+}
+
 function renderDetail(){
   const p = STATE.plants.find(x => x.id === selectedId);
   document.getElementById('detailEmpty').classList.toggle('hidden', !!p);
@@ -1028,6 +1607,31 @@ function renderShop(){
     });
   }
 
+  if(currentTab === 'furniture'){
+    if(!STATE.rooms.length){
+      box.innerHTML = '<div class="empty-msg">Сначала создай комнату — кнопка «➕ Новая комната» на вкладке «🏠 Комнаты».</div>';
+      return;
+    }
+    const room = currentRoom();
+    if(!room){
+      box.innerHTML = '<div class="empty-msg">Выбери комнату слева, чтобы покупать для неё мебель.</div>';
+      return;
+    }
+    STATE.shop.room_items.forEach(d => {
+      const el = document.createElement('div');
+      el.className = 'item';
+      el.innerHTML = `
+        <div class="ico${(d.w || 0) > 18 ? ' wide' : ''}">${roomItemSVG(d.id)}</div>
+        <div class="nm">${d.name}</div>
+        <div class="sub" style="font-size:12px">${d.place === 'wall' ? 'на стену' : 'на пол'}</div>
+        <div class="price">${d.price} 🌸</div>
+        <button class="btn" ${STATE.user.petals < d.price ? 'disabled' : ''}
+          onclick="buyRoomItem('${d.id}')">Купить</button>
+      `;
+      box.appendChild(el);
+    });
+  }
+
   if(currentTab === 'collection'){
     const byRarity = {};
     STATE.plants.forEach(p => { byRarity[p.rarity] = (byRarity[p.rarity] || 0) + 1; });
@@ -1045,7 +1649,29 @@ function renderShop(){
   }
 }
 
+function switchView(view){
+  if(!STATE) return;
+  currentView = view;
+  document.querySelectorAll('.vt').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+  document.getElementById('gardenView').classList.toggle('hidden', view !== 'garden');
+  document.getElementById('roomsView').classList.toggle('hidden', view !== 'rooms');
+
+  if(view === 'rooms'){
+    if(!currentRoom() && STATE.rooms && STATE.rooms.length) currentRoomId = STATE.rooms[0].id;
+    currentTab = 'furniture';
+    renderRooms();
+  } else {
+    currentTab = 'seeds';
+  }
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === currentTab));
+  renderShop();
+}
+
 function switchTab(tab){
+  if(tab === 'furniture' && currentView !== 'rooms'){
+    switchView('rooms');
+    return;
+  }
   currentTab = tab;
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
   renderShop();
@@ -1139,6 +1765,173 @@ async function buyDecor(id){
     toast(data.message);
     await load();
   }catch(e){}
+}
+
+/* --------------------------------------------------------------- комнаты: действия */
+async function buyRoomItem(id){
+  if(!currentRoomId){
+    toast('Сначала создай комнату 🏠', 'bad');
+    switchView('rooms');
+    return;
+  }
+  try{
+    const data = await api('/api/rooms/' + currentRoomId + '/items', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({item:id})
+    });
+    selectedRoomItemId = data.item_id;
+    toast(data.message, 'good');
+    await load();
+  }catch(e){}
+}
+
+async function setRoomTheme(theme){
+  if(!currentRoomId) return;
+  try{
+    await api('/api/rooms/' + currentRoomId + '/update', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({theme})
+    });
+    toast('Оформление изменено ✨');
+    await load();
+  }catch(e){}
+}
+
+async function renameRoom(){
+  if(!currentRoomId) return;
+  const name = document.getElementById('roomNameInput').value.trim();
+  if(!name) return;
+  try{
+    const data = await api('/api/rooms/' + currentRoomId + '/update', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({name})
+    });
+    toast(data.message);
+    await load();
+  }catch(e){}
+}
+
+async function scaleRoomItem(dir){
+  const it = currentRoomItem();
+  if(!it) return;
+  const next = Math.max(0.6, Math.min(2, Math.round(((it.scale || 1) + dir * 0.1) * 10) / 10));
+  if(next === it.scale) return;
+  it.scale = next;
+  renderRoomScene();
+  renderRoomPanel();
+  try{
+    const data = await api('/api/room-items/' + it.id + '/edit', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({scale: next})
+    });
+    Object.assign(it, data.item);
+    renderRoomScene();
+    renderRoomPanel();
+  }catch(e){ await load(); }
+}
+
+async function flipRoomItem(){
+  const it = currentRoomItem();
+  if(!it) return;
+  const next = (it.flip || 1) === 1 ? -1 : 1;
+  it.flip = next;
+  renderRoomScene();
+  try{
+    const data = await api('/api/room-items/' + it.id + '/edit', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({flip: next})
+    });
+    Object.assign(it, data.item);
+    renderRoomScene();
+  }catch(e){ await load(); }
+}
+
+async function removeRoomItem(){
+  const it = currentRoomItem();
+  if(!it) return;
+  if(!confirm('Убрать «' + it.name + '» из комнаты? Лепестки за него не вернутся.')) return;
+  try{
+    const data = await api('/api/room-items/' + it.id, {method:'DELETE'});
+    selectedRoomItemId = null;
+    toast(data.message);
+    await load();
+  }catch(e){}
+}
+
+async function deleteRoom(){
+  const room = currentRoom();
+  if(!room) return;
+  if(!confirm('Удалить комнату «' + room.name + '» вместе со всей мебелью?')) return;
+  try{
+    const data = await api('/api/rooms/' + room.id, {method:'DELETE'});
+    currentRoomId = null;
+    selectedRoomItemId = null;
+    toast(data.message);
+    await load();
+  }catch(e){}
+}
+
+function openCreateRoom(){
+  if(!STATE) return;
+  const maxRooms = STATE.max_rooms || 8;
+  if((STATE.rooms || []).length >= maxRooms){
+    toast('Больше ' + maxRooms + ' комнат создать нельзя', 'bad');
+    return;
+  }
+
+  let picked = 'cozy';
+  const ov = document.createElement('div');
+  ov.className = 'overlay';
+  ov.innerHTML = `
+    <div class="modal" style="max-width:440px;text-align:left">
+      <h2 style="text-align:center">Новая комната</h2>
+      <p style="text-align:center">Выбери настроение для стен и пола — потом можно поменять.</p>
+      <input id="newRoomName" maxlength="24" placeholder="Например, «Уютная спальня»"
+        style="width:100%;padding:12px 14px;border-radius:14px;border:1px solid var(--pink-300);font-family:inherit;font-size:14px;color:var(--ink);background:var(--white);outline:none">
+      <div class="theme-picker" id="newRoomThemes" style="margin-top:14px"></div>
+      <div style="display:flex;gap:8px;margin-top:18px">
+        <button class="btn soft" id="cancelRoomBtn" style="flex:1">Отмена</button>
+        <button class="btn" id="createRoomBtn" style="flex:1">Создать</button>
+      </div>
+    </div>`;
+  document.body.appendChild(ov);
+
+  const picker = ov.querySelector('#newRoomThemes');
+  (STATE.room_themes || []).forEach(t => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'theme-swatch' + (t.id === picked ? ' active' : '');
+    b.innerHTML = `<span class="theme-dot" style="background:linear-gradient(135deg,${t.wall[0]} 0 55%,${t.floor[0]} 55% 100%)"></span>
+      <span>${t.emoji} ${esc(t.name)}</span>`;
+    b.onclick = () => {
+      picked = t.id;
+      picker.querySelectorAll('.theme-swatch').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+    };
+    picker.appendChild(b);
+  });
+
+  const input = ov.querySelector('#newRoomName');
+  input.focus();
+  const close = () => ov.remove();
+  ov.querySelector('#cancelRoomBtn').onclick = close;
+  ov.addEventListener('click', e => { if(e.target === ov) close(); });
+
+  ov.querySelector('#createRoomBtn').onclick = async () => {
+    const name = input.value.trim() || 'Уютная комната';
+    try{
+      const data = await api('/api/rooms', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({name, theme: picked})
+      });
+      currentRoomId = data.room.id;
+      selectedRoomItemId = null;
+      close();
+      toast(data.message, 'good');
+      await load();
+      switchView('rooms');
+    }catch(e){}
+  };
 }
 
 async function rainAll(){

@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from datetime import datetime, timedelta, date
+from typing import Optional
 import sqlite3
 import os
 import random
@@ -59,6 +60,36 @@ DECOR = {
     "moonlamp": {"name": "Лунная лампа", "price": 500, "emoji": "🌜"},
 }
 
+# ---------------------------------------------------------------- комнаты
+# Оформление стен и пола. Цвета подставляются на клиенте.
+ROOM_THEMES = {
+    "cozy":   {"name": "Нежность", "emoji": "🌸", "wall": ["#ffe9f1", "#ffd6e6"], "floor": ["#e9c9b2", "#d6a98d"], "accent": "#e57fa6"},
+    "garden": {"name": "Сад",      "emoji": "🌿", "wall": ["#e8f3e4", "#d3e8cd"], "floor": ["#ddc9a8", "#c6ab87"], "accent": "#7fa87c"},
+    "sunset": {"name": "Закат",    "emoji": "🌅", "wall": ["#ffe9d5", "#ffcea8"], "floor": ["#dbb69b", "#c3967a"], "accent": "#e0906a"},
+    "night":  {"name": "Ночь",     "emoji": "🌙", "wall": ["#4d466b", "#37314f"], "floor": ["#5d4b64", "#45384d"], "accent": "#b39ddb"},
+}
+
+# place: floor — предмет стоит на полу, wall — висит на стене.
+# w — ширина в процентах от ширины комнаты, spot — стартовая позиция.
+ROOM_ITEMS = {
+    "sofa":     {"name": "Диван",          "price": 140, "w": 26, "ratio": 0.60, "place": "floor", "spot": (50, 78), "emoji": "🛋️"},
+    "armchair": {"name": "Кресло",         "price": 110, "w": 14, "ratio": 1.00, "place": "floor", "spot": (20, 82), "emoji": "🪑"},
+    "table":    {"name": "Столик",         "price": 80,  "w": 16, "ratio": 0.66, "place": "floor", "spot": (50, 89), "emoji": "🫖"},
+    "chair":    {"name": "Стул",           "price": 60,  "w": 9,  "ratio": 1.33, "place": "floor", "spot": (70, 87), "emoji": "🪑"},
+    "shelf":    {"name": "Полка",          "price": 120, "w": 14, "ratio": 1.33, "place": "wall",  "spot": (79, 29), "emoji": "📚"},
+    "lamp":     {"name": "Торшер",         "price": 90,  "w": 7,  "ratio": 2.00, "place": "floor", "spot": (88, 70), "emoji": "💡"},
+    "rug":      {"name": "Ковёр",          "price": 60,  "w": 28, "ratio": 0.47, "place": "floor", "spot": (50, 86), "emoji": "🧶", "layer": "rug"},
+    "plant":    {"name": "Монстера",       "price": 100, "w": 10, "ratio": 1.46, "place": "floor", "spot": (10, 73), "emoji": "🪴"},
+    "painting": {"name": "Картина",        "price": 90,  "w": 13, "ratio": 0.81, "place": "wall",  "spot": (29, 28), "emoji": "🖼️"},
+    "window":   {"name": "Окно с шторами", "price": 130, "w": 18, "ratio": 1.10, "place": "wall",  "spot": (50, 25), "emoji": "🪟"},
+    "bed":      {"name": "Кровать",        "price": 170, "w": 28, "ratio": 0.67, "place": "floor", "spot": (50, 78), "emoji": "🛏️"},
+    "pouf":     {"name": "Пуфик",          "price": 70,  "w": 10, "ratio": 0.85, "place": "floor", "spot": (71, 89), "emoji": "🟣"},
+    "cat":      {"name": "Спящий кот",     "price": 55,  "w": 9,  "ratio": 0.67, "place": "floor", "spot": (37, 92), "emoji": "🐈"},
+    "clock":    {"name": "Часы",           "price": 65,  "w": 8,  "ratio": 1.18, "place": "wall",  "spot": (67, 17), "emoji": "🕰️"},
+}
+
+MAX_ROOMS = 8
+
 
 # ---------------------------------------------------------------- база
 def db():
@@ -105,6 +136,32 @@ def init_db():
             c.execute("ALTER TABLE decor ADD COLUMN %s REAL" % col)
     # старые координаты были в пикселях «травки» — переводим в проценты экрана
     c.execute("UPDATE decor SET pos_y = MIN(pos_y / 10.0, 15) WHERE pos_y > 30")
+
+    # комнаты и мебель в них
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS rooms (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT,
+            theme TEXT DEFAULT 'cozy',
+            created_at TEXT
+        )
+    """)
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS room_items (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            room_id INTEGER,
+            item TEXT,
+            pos_x REAL,
+            pos_y REAL,
+            scale REAL DEFAULT 1,
+            flip INTEGER DEFAULT 1,
+            added_at TEXT
+        )
+    """)
+    rcols = [r[1] for r in c.execute("PRAGMA table_info(room_items)").fetchall()]
+    for col, ddl in (("scale", "REAL DEFAULT 1"), ("flip", "INTEGER DEFAULT 1")):
+        if col not in rcols:
+            c.execute("ALTER TABLE room_items ADD COLUMN %s %s" % (col, ddl))
     c.execute("SELECT COUNT(*) FROM user")
     if c.fetchone()[0] == 0:
         c.execute("INSERT INTO user (id, name, petals, last_daily) VALUES (1, ?, ?, NULL)",
@@ -279,6 +336,79 @@ def daily_available(user):
     return user.get("last_daily") != today
 
 
+# ---------------------------------------------------------------- комнаты: логика
+def room_bounds(item_key, scale=1.0):
+    """Границы, при которых предмет целиком остаётся внутри комнаты."""
+    cat = ROOM_ITEMS.get(item_key, {"w": 10, "ratio": 1.2, "place": "floor"})
+    scale = max(0.6, min(2.0, float(scale or 1)))
+    half_w = min(45.0, cat["w"] * scale / 2)
+    # комната 16:10, поэтому высота в % от высоты сцены — это w * ratio * 1.6
+    half_h = min(45.0, cat["w"] * scale * cat.get("ratio", 1.2) * 1.6 / 2)
+    if cat["place"] == "wall":
+        ymin = max(4.0, half_h + 1)
+        ymax = 50.0
+    else:
+        ymin = 64.0
+        ymax = min(95.0, 99.0 - half_h)
+        if ymax < ymin:
+            ymax = ymin
+    return half_w + 1, 99 - half_w, ymin, ymax
+
+
+def clamp_room_pos(item_key, x, y, scale=1.0):
+    """Держим предмет внутри комнаты: у стены — верхняя зона, у пола — нижняя."""
+    xmin, xmax, ymin, ymax = room_bounds(item_key, scale)
+    x = max(xmin, min(xmax, float(x)))
+    y = max(ymin, min(ymax, float(y)))
+    return round(x, 2), round(y, 2)
+
+
+def room_item_payload(row):
+    item = row["item"]
+    cat = ROOM_ITEMS.get(item)
+    if not cat:
+        cat = {"name": item, "w": 10, "ratio": 1.2, "place": "floor", "emoji": "✨", "price": 0}
+    return {
+        "id": row["id"],
+        "item": item,
+        "name": cat["name"],
+        "emoji": cat.get("emoji", "✨"),
+        "w": cat["w"],
+        "ratio": cat.get("ratio", 1.2),
+        "place": cat["place"],
+        "price": cat.get("price", 0),
+        "pos_x": row["pos_x"] if row["pos_x"] is not None else 50,
+        "pos_y": row["pos_y"] if row["pos_y"] is not None else 80,
+        "scale": row["scale"] if row["scale"] is not None else 1,
+        "flip": row["flip"] if row["flip"] is not None else 1,
+    }
+
+
+def fetch_rooms(c):
+    rooms = []
+    rows = c.execute("SELECT id, name, theme, created_at FROM rooms ORDER BY id").fetchall()
+    for r in rows:
+        theme = r["theme"] if r["theme"] in ROOM_THEMES else "cozy"
+        items = [room_item_payload(x) for x in c.execute(
+            "SELECT * FROM room_items WHERE room_id = ? ORDER BY id", (r["id"],)).fetchall()]
+        rooms.append({
+            "id": r["id"],
+            "name": r["name"] or "Комната",
+            "theme": theme,
+            "theme_name": ROOM_THEMES[theme]["name"],
+            "emoji": ROOM_THEMES[theme]["emoji"],
+            "items": items,
+        })
+    return rooms
+
+
+def get_room_or_404(c, room_id):
+    row = c.execute("SELECT * FROM rooms WHERE id = ?", (room_id,)).fetchone()
+    if not row:
+        raise HTTPException(404, "Комната не найдена")
+    return row
+
+
 # ---------------------------------------------------------------- API
 @app.get("/api/state")
 def state():
@@ -288,6 +418,7 @@ def state():
     plants = [plant_payload(r) for r in c.execute(
         "SELECT * FROM plants ORDER BY id").fetchall()]
     decor_rows = c.execute("SELECT id, item, pos_x, pos_y FROM decor").fetchall()
+    rooms = fetch_rooms(c)
     conn.close()
 
     mood = "сияет" if all(p["health"] >= 0.8 for p in plants) else (
@@ -306,7 +437,11 @@ def state():
         "shop": {
             "seeds": [{"id": k, **v} for k, v in SPECIES.items() if k != "secret"],
             "decor": [{"id": k, **v} for k, v in DECOR.items()],
+            "room_items": [{"id": k, **v} for k, v in ROOM_ITEMS.items()],
         },
+        "rooms": rooms,
+        "room_themes": [{"id": k, **v} for k, v in ROOM_THEMES.items()],
+        "max_rooms": MAX_ROOMS,
         "secret_note": SECRET_NOTE,
         "time_of_day": get_time_of_day(),
         "season": get_season(),
@@ -326,6 +461,30 @@ class SpeciesIn(BaseModel):
 class PosIn(BaseModel):
     x: float
     y: float
+
+
+class RoomIn(BaseModel):
+    name: str
+    theme: str = "cozy"
+
+
+class RoomUpdateIn(BaseModel):
+    name: Optional[str] = None
+    theme: Optional[str] = None
+
+
+class RoomItemIn(BaseModel):
+    item: str
+
+
+class RoomItemMoveIn(BaseModel):
+    x: float
+    y: float
+
+
+class RoomItemEditIn(BaseModel):
+    scale: Optional[float] = None
+    flip: Optional[int] = None
 
 
 @app.post("/api/water/{plant_id}")
@@ -442,6 +601,163 @@ def move_decor(decor_id: int, data: PosIn):
     conn.commit()
     conn.close()
     return {"ok": True, "message": "Передвинуто ✨"}
+
+
+# ---------------------------------------------------------------- комнаты: API
+@app.post("/api/rooms")
+def create_room(data: RoomIn):
+    name = data.name.strip()[:24] or "Уютная комната"
+    theme = data.theme if data.theme in ROOM_THEMES else "cozy"
+    conn = db()
+    c = conn.cursor()
+    count = c.execute("SELECT COUNT(*) FROM rooms").fetchone()[0]
+    if count >= MAX_ROOMS:
+        conn.close()
+        raise HTTPException(400, "Больше %d комнат создать нельзя" % MAX_ROOMS)
+    cur = c.execute("INSERT INTO rooms (name, theme, created_at) VALUES (?, ?, ?)",
+                    (name, theme, datetime.now().isoformat()))
+    room_id = cur.lastrowid
+    conn.commit()
+    room = [r for r in fetch_rooms(c) if r["id"] == room_id][0]
+    conn.close()
+    return {"ok": True, "room": room, "message": "Комната «%s» создана 🏠" % name}
+
+
+@app.post("/api/rooms/{room_id}/update")
+def update_room(room_id: int, data: RoomUpdateIn):
+    conn = db()
+    c = conn.cursor()
+    get_room_or_404(c, room_id)
+    fields, values = [], []
+    if data.name is not None:
+        name = data.name.strip()[:24]
+        if not name:
+            conn.close()
+            raise HTTPException(400, "Имя комнаты не может быть пустым")
+        fields.append("name = ?")
+        values.append(name)
+    if data.theme is not None:
+        if data.theme not in ROOM_THEMES:
+            conn.close()
+            raise HTTPException(400, "Неизвестное оформление")
+        fields.append("theme = ?")
+        values.append(data.theme)
+    if not fields:
+        conn.close()
+        raise HTTPException(400, "Нечего менять")
+    values.append(room_id)
+    c.execute("UPDATE rooms SET %s WHERE id = ?" % ", ".join(fields), tuple(values))
+    conn.commit()
+    room = [r for r in fetch_rooms(c) if r["id"] == room_id][0]
+    conn.close()
+    return {"ok": True, "room": room, "message": "Комната обновлена ✨"}
+
+
+@app.delete("/api/rooms/{room_id}")
+def delete_room(room_id: int):
+    conn = db()
+    c = conn.cursor()
+    get_room_or_404(c, room_id)
+    c.execute("DELETE FROM room_items WHERE room_id = ?", (room_id,))
+    c.execute("DELETE FROM rooms WHERE id = ?", (room_id,))
+    conn.commit()
+    conn.close()
+    return {"ok": True, "message": "Комната удалена. Мебель из неё тоже 🧹"}
+
+
+@app.post("/api/rooms/{room_id}/items")
+def buy_room_item(room_id: int, data: RoomItemIn):
+    if data.item not in ROOM_ITEMS:
+        raise HTTPException(400, "Неизвестный предмет мебели")
+    cat = ROOM_ITEMS[data.item]
+    conn = db()
+    c = conn.cursor()
+    get_room_or_404(c, room_id)
+    user = fetch_user(c)
+    if user["petals"] < cat["price"]:
+        conn.close()
+        raise HTTPException(400, "Недостаточно лепестков (нужно %d)" % cat["price"])
+    sx, sy = cat.get("spot", (50, 80))
+    x, y = clamp_room_pos(data.item,
+                          sx + random.uniform(-5, 5),
+                          sy + random.uniform(-3, 3), 1.0)
+    cur = c.execute("""INSERT INTO room_items
+                       (room_id, item, pos_x, pos_y, scale, flip, added_at)
+                       VALUES (?, ?, ?, ?, 1, 1, ?)""",
+                    (room_id, data.item, x, y, datetime.now().isoformat()))
+    item_id = cur.lastrowid
+    c.execute("UPDATE user SET petals = petals - ? WHERE id = 1", (cat["price"],))
+    conn.commit()
+    row = c.execute("SELECT * FROM room_items WHERE id = ?", (item_id,)).fetchone()
+    payload = room_item_payload(row)
+    conn.close()
+    return {"ok": True, "item": payload, "item_id": item_id,
+            "message": "%s теперь в комнате %s" % (cat["name"], cat.get("emoji", "✨"))}
+
+
+@app.post("/api/room-items/{item_id}/move")
+def move_room_item(item_id: int, data: RoomItemMoveIn):
+    conn = db()
+    c = conn.cursor()
+    row = c.execute("SELECT * FROM room_items WHERE id = ?", (item_id,)).fetchone()
+    if not row:
+        conn.close()
+        raise HTTPException(404, "Предмет не найден")
+    scale = row["scale"] if row["scale"] is not None else 1
+    x, y = clamp_room_pos(row["item"], data.x, data.y, scale)
+    c.execute("UPDATE room_items SET pos_x = ?, pos_y = ? WHERE id = ?", (x, y, item_id))
+    conn.commit()
+    conn.close()
+    return {"ok": True, "message": "Переставлено ✨"}
+
+
+@app.post("/api/room-items/{item_id}/edit")
+def edit_room_item(item_id: int, data: RoomItemEditIn):
+    conn = db()
+    c = conn.cursor()
+    row = c.execute("SELECT * FROM room_items WHERE id = ?", (item_id,)).fetchone()
+    if not row:
+        conn.close()
+        raise HTTPException(404, "Предмет не найден")
+    fields, values = [], []
+    new_scale = None
+    if data.scale is not None:
+        new_scale = max(0.6, min(2.0, float(data.scale)))
+        fields.append("scale = ?")
+        values.append(new_scale)
+    if data.flip is not None:
+        fields.append("flip = ?")
+        values.append(-1 if data.flip < 0 else 1)
+    if not fields:
+        conn.close()
+        raise HTTPException(400, "Нечего менять")
+    if new_scale is not None:
+        pos_x = row["pos_x"] if row["pos_x"] is not None else 50
+        pos_y = row["pos_y"] if row["pos_y"] is not None else 80
+        x, y = clamp_room_pos(row["item"], pos_x, pos_y, new_scale)
+        fields.extend(["pos_x = ?", "pos_y = ?"])
+        values.extend([x, y])
+    values.append(item_id)
+    c.execute("UPDATE room_items SET %s WHERE id = ?" % ", ".join(fields), tuple(values))
+    conn.commit()
+    row = c.execute("SELECT * FROM room_items WHERE id = ?", (item_id,)).fetchone()
+    payload = room_item_payload(row)
+    conn.close()
+    return {"ok": True, "item": payload, "message": "Готово ✨"}
+
+
+@app.delete("/api/room-items/{item_id}")
+def remove_room_item(item_id: int):
+    conn = db()
+    c = conn.cursor()
+    row = c.execute("SELECT id FROM room_items WHERE id = ?", (item_id,)).fetchone()
+    if not row:
+        conn.close()
+        raise HTTPException(404, "Предмет не найден")
+    c.execute("DELETE FROM room_items WHERE id = ?", (item_id,))
+    conn.commit()
+    conn.close()
+    return {"ok": True, "message": "Убрано из комнаты 🧹"}
 
 
 @app.post("/api/harvest/{plant_id}")
