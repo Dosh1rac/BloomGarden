@@ -84,7 +84,7 @@ ROOM_ITEMS = {
     "window":   {"name": "Окно с шторами", "price": 130, "w": 18, "ratio": 1.10, "place": "wall",  "spot": (50, 25), "emoji": "🪟"},
     "bed":      {"name": "Кровать",        "price": 170, "w": 28, "ratio": 0.67, "place": "floor", "spot": (50, 78), "emoji": "🛏️"},
     "pouf":     {"name": "Пуфик",          "price": 70,  "w": 10, "ratio": 0.85, "place": "floor", "spot": (71, 89), "emoji": "🟣"},
-    "cat":      {"name": "Спящий кот",     "price": 55,  "w": 9,  "ratio": 0.67, "place": "floor", "spot": (37, 92), "emoji": "🐈"},
+    "cat":      {"name": "Рыжий мейнкун",  "price": 55,  "w": 11, "ratio": 0.69, "place": "floor", "spot": (37, 92), "emoji": "🐈"},
     "clock":    {"name": "Часы",           "price": 65,  "w": 8,  "ratio": 1.18, "place": "wall",  "spot": (67, 17), "emoji": "🕰️"},
 }
 
