@@ -8,6 +8,7 @@ from starlette.background import BackgroundTask
 import sqlite3
 import os
 import random
+import shutil
 import tempfile
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -27,6 +28,9 @@ def resolve_db_path():
 
 
 DB_PATH = resolve_db_path()
+
+# Снимок сада, с которого стартует пустой том (первый запуск).
+SEED_PATH = os.path.join(BASE_DIR, "seed.db")
 
 app = FastAPI(title="Цветущий сад")
 
@@ -149,8 +153,19 @@ def snapshot_db():
             pass
 
 
+def seed_db():
+    """Пустая база (новый том) стартует из сохранённого снимка сада."""
+    if os.path.exists(DB_PATH) or not os.path.exists(SEED_PATH):
+        return
+    try:
+        shutil.copyfile(SEED_PATH, DB_PATH)
+    except OSError:
+        pass
+
+
 def init_db():
     db_folder()
+    seed_db()
     snapshot_db()
     conn = db()
     c = conn.cursor()

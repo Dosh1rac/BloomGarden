@@ -1,5 +1,6 @@
-# база данных живёт на томе Railway, в git её не кладём
-backend/*.db
+# живые базы и снимки на томе Railway в git не попадают
+backend/garden.db
+backend/garden-*.db
 backend/*.db-journal
 backend/*.db-wal
 backend/*.db-shm
