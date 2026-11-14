@@ -1,14 +1,32 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from datetime import datetime, timedelta, date
 from typing import Optional
+from starlette.background import BackgroundTask
 import sqlite3
 import os
 import random
+import tempfile
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE_DIR, "garden.db")
+
+
+# На Railway файловая система контейнера пересоздаётся при каждом деплое.
+# Поэтому базу держим на постоянном томе (volume), а не рядом с кодом.
+# Приоритет: DB_PATH -> RAILWAY_VOLUME_MOUNT_PATH -> локальный файл.
+def resolve_db_path():
+    explicit = os.environ.get("DB_PATH")
+    if explicit:
+        return explicit
+    volume = os.environ.get("RAILWAY_VOLUME_MOUNT_PATH")
+    if volume:
+        return os.path.join(volume, "garden.db")
+    return os.path.join(BASE_DIR, "garden.db")
+
+
+DB_PATH = resolve_db_path()
 
 app = FastAPI(title="Цветущий сад")
 
@@ -98,7 +116,42 @@ def db():
     return conn
 
 
+def db_folder():
+    folder = os.path.dirname(os.path.abspath(DB_PATH))
+    os.makedirs(folder, exist_ok=True)
+    return folder
+
+
+def snapshot_db():
+    """Суточный снимок базы рядом с ней: страховка от неудачной миграции."""
+    if not os.path.exists(DB_PATH) or os.path.getsize(DB_PATH) == 0:
+        return
+    folder = db_folder()
+    name = "garden-%s.db" % datetime.now().strftime("%Y%m%d")
+    path = os.path.join(folder, name)
+    if not os.path.exists(path):
+        try:
+            src = sqlite3.connect(DB_PATH)
+            dst = sqlite3.connect(path)
+            with dst:
+                src.backup(dst)
+            dst.close()
+            src.close()
+        except Exception:
+            return
+    # храним только 7 последних суточных снимков
+    snaps = sorted(f for f in os.listdir(folder)
+                   if f.startswith("garden-") and f.endswith(".db"))
+    for old in snaps[:-7]:
+        try:
+            os.remove(os.path.join(folder, old))
+        except OSError:
+            pass
+
+
 def init_db():
+    db_folder()
+    snapshot_db()
     conn = db()
     c = conn.cursor()
     c.execute("""
@@ -815,6 +868,41 @@ def daily():
     conn.close()
     return {"ok": True, "petals": petals,
             "message": "Ежедневный подарок: +%d 🌸" % petals}
+
+
+@app.get("/api/db-info")
+def db_info():
+    """Проверка, что база лежит на постоянном томе, а не во временном контейнере."""
+    exists = os.path.exists(DB_PATH)
+    return {
+        "path": DB_PATH,
+        "persistent": bool(os.environ.get("DB_PATH")
+                           or os.environ.get("RAILWAY_VOLUME_MOUNT_PATH")),
+        "exists": exists,
+        "size": os.path.getsize(DB_PATH) if exists else 0,
+    }
+
+
+@app.get("/api/backup")
+def backup():
+    """Скачать копию базы целиком (SQLite-файл)."""
+    if not os.path.exists(DB_PATH):
+        raise HTTPException(404, "База данных ещё не создана")
+    fd, tmp_path = tempfile.mkstemp(prefix="garden-backup-", suffix=".db")
+    os.close(fd)
+    src = sqlite3.connect(DB_PATH)
+    dst = sqlite3.connect(tmp_path)
+    with dst:
+        src.backup(dst)
+    dst.close()
+    src.close()
+    name = "garden-%s.db" % datetime.now().strftime("%Y-%m-%d")
+    return FileResponse(
+        tmp_path,
+        filename=name,
+        media_type="application/octet-stream",
+        background=BackgroundTask(os.remove, tmp_path),
+    )
 
 
 @app.get("/favicon.ico")

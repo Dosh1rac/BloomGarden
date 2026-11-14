@@ -1,0 +1,8 @@
+# база данных живёт на томе Railway, в git её не кладём
+backend/*.db
+backend/*.db-journal
+backend/*.db-wal
+backend/*.db-shm
+backend/__pycache__/
+*.pyc
+*.log
